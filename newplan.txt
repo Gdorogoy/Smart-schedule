@@ -1,0 +1,763 @@
+┌─────────────────────┐
+                            │   Load Balancer     │
+                            │    (Nginx/AWS)      │
+                            └──────────┬──────────┘
+                                       │
+                            ┌──────────▼──────────┐
+                            │    API Gateway      │
+                            │   (Port 3000)       │
+                            │  - Routing          │
+                            │  - Auth Middleware  │
+                            │  - Rate Limiting    │
+                            │  - Redis Cache      │
+                            └──────────┬──────────┘
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        │                              │                              │
+┌───────▼────────┐           ┌────────▼─────────┐         ┌─────────▼────────┐
+│  Auth Service  │           │ Organization     │         │  Employee        │
+│  (Port 3001)   │           │    Service       │         │   Service        │
+│                │           │  (Port 3002)     │         │  (Port 3003)     │
+│ - Register     │           │                  │         │                  │
+│ - Login        │           │ - Create Org     │         │ - Add Employee   │
+│ - JWT          │           │ - Update Org     │         │ - Update Role    │
+│ - Password     │           │ - Delete Org     │         │ - Remove Emp     │
+│   Reset        │           │ - Get Orgs       │         │ - Get Employees  │
+└────────┬───────┘           └────────┬─────────┘         └─────────┬────────┘
+         │                            │                             │
+         │                            │                             │
+┌────────▼────────┐         ┌────────▼─────────┐         ┌─────────▼────────┐
+│  Team Service   │         │  Task Service    │         │ Notification     │
+│  (Port 3004)    │         │  (Port 3005)     │         │    Service       │
+│                 │         │                  │         │  (Port 3006)     │
+│ - Create Team   │         │ - Create Task    │         │                  │
+│ - Add Members   │         │ - Assign Task    │         │ - Send Email     │
+│ - Permissions   │         │ - Update Status  │         │ - Push Notif     │
+│ - Remove Team   │         │ - Bulk Tasks     │         │ - In-App Notif   │
+└────────┬────────┘         └────────┬─────────┘         └─────────┬────────┘
+         │                           │                             │
+         └───────────────────────────┼─────────────────────────────┘
+                                     │
+                        ┌────────────▼────────────┐
+                        │      RabbitMQ           │
+                        │   (Message Broker)      │
+                        │                         │
+                        │  Exchanges:             │
+                        │  - microservices        │
+                        │                         │
+                        │  Queues:                │
+                        │  - auth-queue           │
+                        │  - org-queue            │
+                        │  - employee-queue       │
+                        │  - team-queue           │
+                        │  - task-queue           │
+                        │  - notification-queue   │
+                        └─────────────────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         │                           │                           │
+         │                  ┌────────▼────────┐                  │
+         │                  │  Redis Cluster  │                  │
+         │                  │   (Port 6379)   │                  │
+         │                  │                 │                  │
+         │                  │ - Caching       │                  │
+         │                  │ - Sessions      │                  │
+         │                  │ - Rate Limiting │                  │
+         │                  │ - Pub/Sub       │                  │
+         │                  │ - Token Storage │                  │
+         │                  └─────────────────┘                  │
+         │                                                        │
+┌────────▼────────┐         ┌───────▼────────┐         ┌───────▼────────┐
+│   MongoDB       │         │   MongoDB      │         │   MongoDB      │
+│  auth-service   │         │  org-service   │         │ employee-svc   │
+│   Database      │         │   Database     │         │   Database     │
+└─────────────────┘         └────────────────┘         └────────────────┘
+         │                           │                           │
+┌────────▼────────┐         ┌───────▼────────┐         ┌───────▼────────┐
+│   MongoDB       │         │   MongoDB      │         │   MongoDB      │
+│  team-service   │         │  task-service  │         │ notification   │
+│   Database      │         │   Database     │         │   Database     │
+└─────────────────┘         └────────────────┘         └────────────────┘
+```
+
+---
+
+## 📊 Event Flow Diagram
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        EVENT FLOW EXAMPLES                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+Example 1: User Registration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Client → API Gateway → Auth Service
+                          │
+                          ├─ Create User in DB
+                          │
+                          ├─ Store Session in Redis
+                          │
+                          ├─ Publish: user.registered
+                          │
+                          └─→ RabbitMQ ─┬─→ Organization Service
+                                        │    ├─ Create default org
+                                        │    └─ Publish: org.created
+                                        │
+                                        ├─→ Notification Service
+                                        │    └─ Send welcome email
+                                        │
+                                        └─→ Employee Service
+                                             └─ Create employee record
+
+
+Example 2: Manager Creates Tasks for Multiple Employees
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Manager → API Gateway (Check Redis Rate Limit) → Task Service
+                            │
+                            ├─ Validate permissions (Cache in Redis)
+                            │
+                            ├─ Publish: task.bulk.created (for each employee)
+                            │
+                            └─→ RabbitMQ ─┬─→ Task Service Queue
+                                          │    ├─ Process task 1
+                                          │    ├─ Process task 2
+                                          │    ├─ Process task 3...
+                                          │    ├─ Publish: task.assigned
+                                          │    └─ Invalidate Redis Cache
+                                          │
+                                          ├─→ Notification Service
+                                          │    ├─ Send email to employee 1
+                                          │    ├─ Send email to employee 2
+                                          │    └─ Send in-app notification
+                                          │
+                                          └─→ Employee Service
+                                               └─ Update employee task count
+
+
+Example 3: Employee Removed from Organization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Admin → API Gateway → Employee Service
+                         │
+                         ├─ Mark employee as removed
+                         │
+                         ├─ Clear Redis Cache for employee
+                         │
+                         ├─ Publish: employee.removed
+                         │
+                         └─→ RabbitMQ ─┬─→ Team Service
+                                       │    └─ Remove from all teams
+                                       │
+                                       ├─→ Task Service
+                                       │    └─ Reassign active tasks
+                                       │
+                                       ├─→ Notification Service
+                                       │    └─ Send goodbye email
+                                       │
+                                       └─→ Organization Service
+                                            └─ Update employee count
+```
+
+---
+
+## 🎯 What Each Service Needs
+
+### 1. **Auth Service**
+
+**Purpose:** Handle all authentication and authorization
+
+**Responsibilities:**
+- User registration with email validation
+- User login with JWT token generation
+- Token refresh mechanism
+- Password reset flow
+- Email verification
+- Two-factor authentication (optional)
+- Session management
+- User profile CRUD operations
+
+**Database Collections:**
+- users
+- refresh_tokens
+- password_reset_tokens
+- email_verification_tokens
+
+**Redis Usage:**
+- Token blacklist (revoked JWTs)
+- Active sessions storage
+- Password reset tokens with TTL
+- Login attempt tracking (brute force prevention)
+- Refresh token storage
+- OTP codes for 2FA
+
+**Events Published:**
+- user.registered
+- user.login
+- user.logout
+- user.password.reset
+- user.email.verified
+- user.deleted
+
+**Events Consumed:**
+- None (auth is usually the starting point)
+
+**External Dependencies:**
+- JWT library
+- Bcrypt for password hashing
+- Email service integration
+- Redis for session/token management
+
+---
+
+### 2. **Organization Service**
+
+**Purpose:** Manage organizations and their settings
+
+**Responsibilities:**
+- Create new organizations
+- Update organization details
+- Delete organizations (soft delete)
+- Get organization by ID
+- List organizations for a user
+- Manage organization settings
+- Handle organization ownership transfer
+- Organization subscription management (if applicable)
+
+**Database Collections:**
+- organizations
+- organization_settings
+- organization_subscriptions
+
+**Redis Usage:**
+- Cache organization details
+- Cache user-organization relationships
+- Cache organization settings
+- Cache subscription status
+
+**Events Published:**
+- organization.created
+- organization.updated
+- organization.deleted
+- organization.owner.changed
+- organization.settings.updated
+
+**Events Consumed:**
+- user.registered (to create default personal organization)
+- employee.removed (to update employee count)
+- team.created (to add team to organization)
+
+**External Dependencies:**
+- Redis for caching
+
+---
+
+### 3. **Employee Service**
+
+**Purpose:** Manage employees within organizations
+
+**Responsibilities:**
+- Add user to organization as employee
+- Update employee role and job title
+- Remove employee from organization
+- Get employee details
+- List employees in organization
+- Search employees
+- Manage employee status (active/inactive)
+- Track employee permissions
+
+**Database Collections:**
+- employees
+- employee_permissions
+- employee_invitations
+
+**Redis Usage:**
+- Cache employee lists by organization
+- Cache employee permissions
+- Cache employee search results
+- Store pending invitations with TTL
+
+**Events Published:**
+- employee.added
+- employee.updated
+- employee.role.changed
+- employee.removed
+- employee.status.changed
+- employee.invited
+
+**Events Consumed:**
+- organization.created (to add owner as first employee)
+- user.registered (for invitation matching)
+- task.assigned (to update task count)
+- team.member.added (to track team memberships)
+
+**External Dependencies:**
+- Redis for caching
+
+---
+
+### 4. **Team Service**
+
+**Purpose:** Manage teams within organizations
+
+**Responsibilities:**
+- Create teams
+- Update team details
+- Delete teams
+- Add members to teams
+- Remove members from teams
+- Manage team permissions and roles
+- Set team leaders
+- Get team details
+- List teams in organization
+- Manage team-specific settings
+
+**Database Collections:**
+- teams
+- team_members
+- team_permissions
+- team_settings
+
+**Redis Usage:**
+- Cache team lists by organization
+- Cache team member lists
+- Cache team permissions
+- Cache team leader information
+
+**Events Published:**
+- team.created
+- team.updated
+- team.deleted
+- team.member.added
+- team.member.removed
+- team.leader.changed
+- team.permission.granted
+- team.permission.revoked
+
+**Events Consumed:**
+- employee.added (to allow adding to teams)
+- employee.removed (to remove from all teams)
+- organization.deleted (to delete all teams)
+- task.assigned (if task is team-specific)
+
+**External Dependencies:**
+- Redis for caching
+
+---
+
+### 5. **Task Service**
+
+**Purpose:** Manage tasks and assignments
+
+**Responsibilities:**
+- Create individual tasks
+- Create bulk tasks for multiple employees
+- Update task details
+- Update task status (todo, in-progress, done)
+- Assign tasks to employees
+- Reassign tasks
+- Set task priorities
+- Set task due dates
+- Add task comments
+- Upload task attachments
+- Get task details
+- List tasks by employee
+- List tasks by team
+- List tasks by organization
+- Search and filter tasks
+- Task analytics and reporting
+
+**Database Collections:**
+- tasks
+- task_comments
+- task_attachments
+- task_history
+
+**Redis Usage:**
+- Cache user task lists
+- Cache team task lists
+- Cache task statistics (completed, pending, overdue)
+- Store real-time task updates for Pub/Sub
+- Cache task search results
+- Store task leaderboards
+
+**Events Published:**
+- task.created
+- task.bulk.created
+- task.assigned
+- task.reassigned
+- task.updated
+- task.status.changed
+- task.completed
+- task.overdue
+- task.deleted
+- task.comment.added
+
+**Events Consumed:**
+- employee.removed (to reassign tasks)
+- employee.role.changed (to update task permissions)
+- team.deleted (to update team tasks)
+- team.member.removed (to handle task reassignment)
+
+**External Dependencies:**
+- File storage service for attachments (S3, MinIO)
+- Redis for caching and real-time updates
+
+---
+
+### 6. **Notification Service**
+
+**Purpose:** Handle all notifications across the system
+
+**Responsibilities:**
+- Send email notifications
+- Send push notifications
+- Send in-app notifications
+- Manage notification preferences
+- Queue notifications
+- Track notification delivery status
+- Batch notifications
+- Notification templates management
+- Notification history
+- Mark notifications as read
+- Delete notifications
+
+**Database Collections:**
+- notifications
+- notification_preferences
+- notification_templates
+- notification_history
+
+**Redis Usage:**
+- Queue pending notifications
+- Cache notification preferences
+- Cache unread notification counts
+- Pub/Sub for real-time notifications
+- Store WebSocket connection mappings
+- Cache notification templates
+
+**Events Published:**
+- notification.sent
+- notification.failed
+- notification.read
+- notification.deleted
+
+**Events Consumed:**
+- user.registered (welcome email)
+- task.assigned (task notification)
+- task.completed (completion notification)
+- task.overdue (reminder notification)
+- employee.added (invitation email)
+- employee.removed (goodbye email)
+- team.member.added (team notification)
+- organization.created (setup guide email)
+- ANY event that requires notification
+
+**External Dependencies:**
+- Email service (SendGrid, AWS SES, Nodemailer)
+- Push notification service (Firebase, OneSignal)
+- WebSocket for real-time in-app notifications
+- Redis for real-time updates and queuing
+
+---
+
+### 7. **Redis Service** ⭐
+
+**Purpose:** Distributed caching and data structure store
+
+**Port:** 6379 (default)
+
+**Responsibilities:**
+- Cache frequently accessed data
+- Store user sessions
+- Rate limiting counters
+- Token blacklisting
+- Pub/Sub for real-time events
+- Distributed locks
+- Task queues (optional, with Bull)
+- Temporary data with TTL
+- Leaderboards and counters
+- WebSocket connection management
+
+**Data Types Used:**
+- **Strings:** Simple key-value cache, counters
+- **Hashes:** User sessions, object caching
+- **Lists:** Task queues, recent items
+- **Sets:** Unique collections, tags
+- **Sorted Sets:** Leaderboards, time-based data
+- **Pub/Sub:** Real-time messaging
+- **Streams:** Event logs (optional)
+
+**Common Key Patterns:**
+```
+sessions:user:{userId}              → User session data
+cache:user:{userId}                 → Cached user data
+cache:org:{orgId}                   → Cached organization data
+cache:tasks:user:{userId}           → User's task list
+rate_limit:{userId}:{endpoint}      → Rate limiting counter
+blacklist:jwt:{token}               → Revoked JWT tokens
+permissions:user:{userId}           → Cached permissions
+login_attempts:{email}              → Login attempt counter
+reset_token:{userId}                → Password reset token
+notifications:unread:{userId}       → Unread notification count
+ws:connections:{userId}             → WebSocket connection IDs
+leaderboard:tasks:completed         → Task completion leaderboard
+lock:task:{taskId}                  → Distributed lock for task
+```
+
+**Configuration:**
+- **Maxmemory:** 2GB (adjust based on needs)
+- **Eviction Policy:** allkeys-lru (Least Recently Used)
+- **Persistence:** RDB snapshots + AOF (for durability)
+- **Replication:** Master-Slave setup (production)
+- **Cluster:** Redis Cluster for horizontal scaling (large scale)
+
+**Monitoring:**
+- Memory usage
+- Hit/miss ratio
+- Commands per second
+- Slow queries
+- Connected clients
+- Evicted keys
+
+**External Dependencies:**
+- None (standalone service)
+
+---
+
+## 📦 Common Requirements for ALL Services
+
+**Each Service Must Have:**
+
+1. **Express/Fastify HTTP Server**
+   - REST API endpoints
+   - Error handling middleware
+   - Request validation
+   - CORS configuration
+   - Rate limiting
+
+2. **MongoDB Connection**
+   - Mongoose models
+   - Database connection management
+   - Migration scripts
+   - Indexes for performance
+
+3. **RabbitMQ Integration**
+   - Publisher instance
+   - Consumer instance
+   - Event handlers
+   - Message acknowledgment
+   - Error handling and retry logic
+   - Dead letter queue handling
+
+4. **Redis Integration**
+   - Connection pooling
+   - Cache management
+   - Session storage
+   - Pub/Sub subscriptions (where needed)
+   - Cache invalidation strategies
+
+5. **Authentication Middleware**
+   - JWT verification
+   - Permission checking
+   - Role-based access control
+   - Redis-backed session validation
+
+6. **Logging**
+   - Structured logging (Winston, Pino)
+   - Log levels (error, warn, info, debug)
+   - Request/response logging
+   - Event logging
+   - Cache hit/miss logging
+
+7. **Health Check Endpoint**
+   - Service status
+   - Database connectivity
+   - RabbitMQ connectivity
+   - Redis connectivity
+   - Dependencies status
+
+8. **Environment Configuration**
+   - Environment variables
+   - Configuration management
+   - Secrets management
+
+9. **Error Handling**
+   - Global error handler
+   - Custom error classes
+   - Error reporting (Sentry)
+   - Redis connection error handling
+
+10. **Testing**
+    - Unit tests
+    - Integration tests
+    - API tests
+    - Event testing
+    - Cache testing
+
+11. **Documentation**
+    - API documentation (Swagger/OpenAPI)
+    - Event documentation
+    - README with setup instructions
+    - Cache strategy documentation
+
+12. **Docker Configuration**
+    - Dockerfile
+    - Docker Compose support
+    - Multi-stage builds
+
+13. **Monitoring**
+    - Metrics collection (Prometheus)
+    - Performance monitoring
+    - Error tracking
+    - Cache performance metrics
+
+---
+
+## 🚀 Additional Services (Optional but Recommended)
+
+### 8. **File Service**
+- Upload files
+- Download files
+- Delete files
+- File metadata management
+- File access control
+- Redis caching for file metadata
+
+### 9. **Analytics Service**
+- Track user actions
+- Generate reports
+- Dashboard data
+- Business intelligence
+- Redis for real-time analytics
+
+### 10. **Audit Service**
+- Log all important actions
+- Compliance tracking
+- Change history
+- Security auditing
+- Redis for recent audit logs
+
+### 11. **Search Service**
+- Full-text search
+- Elasticsearch integration
+- Search indexing
+- Search suggestions
+- Redis for search result caching
+
+---
+
+## 🔄 Inter-Service Communication Patterns
+
+**Synchronous (HTTP):**
+- API Gateway to Services (user-facing requests)
+- Health checks
+- Direct queries when immediate response needed
+- Cache lookups before service calls
+
+**Asynchronous (RabbitMQ):**
+- Background jobs
+- Service-to-service events
+- Notifications
+- Data synchronization
+- Saga patterns
+- Cache invalidation events
+
+**Real-time (Redis Pub/Sub):**
+- WebSocket notifications
+- Live updates
+- Real-time dashboards
+- Cross-service immediate updates
+
+**When to Use What:**
+- **HTTP:** User needs immediate response, data already cached
+- **RabbitMQ:** Background processing, eventual consistency, loose coupling
+- **Redis Pub/Sub:** Real-time updates, WebSocket broadcasts
+- **Redis Cache:** Fast data retrieval, reduce database load
+
+---
+
+## 💾 Database Strategy
+
+**Option 1: Database Per Service (Recommended)**
+- Each service has its own MongoDB instance/database
+- Complete data isolation
+- Independent scaling
+- True microservices
+- Redis shared across services for cross-cutting concerns
+
+**Option 2: Shared Database (Not Recommended)**
+- All services share one MongoDB instance
+- Easier to start
+- Harder to scale
+- Not true microservices
+- Redis still shared for caching
+
+**Redis Strategy:**
+- **Single Redis Instance:** Good for development and small deployments
+- **Redis Sentinel:** High availability with automatic failover
+- **Redis Cluster:** Horizontal scaling for large deployments
+- **Separate Redis Per Service:** Complete isolation (overkill for most cases)
+
+---
+
+## 🔐 Security Considerations
+
+**Each Service Needs:**
+- Input validation
+- SQL injection prevention (NoSQL injection)
+- XSS protection
+- CSRF protection
+- Rate limiting (Redis-backed)
+- API authentication
+- Service-to-service authentication
+- Encryption at rest and in transit
+- Secret management
+- Audit logging
+- Redis security (password, TLS, ACLs)
+
+**Redis Security:**
+- Require password authentication
+- Use TLS for connections
+- Enable Redis ACLs (Access Control Lists)
+- Network isolation
+- Regular security updates
+- Monitor suspicious access patterns
+- Disable dangerous commands in production
+
+---
+
+## 🎯 Caching Strategy
+
+**What to Cache:**
+- ✅ User sessions and auth tokens
+- ✅ User permissions and roles
+- ✅ Frequently accessed user data
+- ✅ Organization and team lists
+- ✅ Task lists and statistics
+- ✅ API rate limit counters
+- ✅ Search results
+- ✅ Configuration data
+
+**What NOT to Cache:**
+- ❌ Sensitive financial data
+- ❌ Audit logs (keep in database)
+- ❌ One-time tokens (unless with TTL)
+- ❌ Frequently changing data
+
+**Cache Invalidation Patterns:**
+1. **TTL-based:** Set expiration time (e.g., 5 minutes)
+2. **Event-based:** Invalidate on events (task.updated → clear task cache)
+3. **Write-through:** Update cache and database simultaneously
+4. **Lazy loading:** Load from DB on cache miss, then cache
+
+**Cache Key Naming Convention:**
+```
+{service}:{resource}:{identifier}:{sub-resource}
+
+Examples:
+auth:session:user:12345
+task:list:user:12345:pending
+org:details:456
+user:permissions:12345
+rate:limit:api:12345:/tasks
