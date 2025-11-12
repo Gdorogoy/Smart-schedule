@@ -11,7 +11,7 @@ export const verifyRequest=async(req,res,next)=>{
 
     try{
         let decoded=jwt.verify(token, PUBLIC_KEY, {algorithms:['RS256']});
-        req.team=decoded;
+        req.user=decoded;
         next();
     }catch(err){
         return res.status(403).json({status:"bad",content:"Invalid or expired token"});
