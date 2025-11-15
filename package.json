@@ -1,0 +1,27 @@
+{
+  "name": "firstapp",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Gdorogoy/Smart-schedule#readme",
+  "bugs": {
+    "url": "https://github.com/Gdorogoy/Smart-schedule/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gdorogoy/Smart-schedule.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm run auth & npm run user & npm run task & npm run team",
+    "auth": "cd services/auth-service && npm run dev",
+    "user": "cd services/user-service && npm run dev",
+    "task": "cd services/task-service && npm run dev",
+    "team": "cd services/team-service && npm run dev"
+
+
+  }
+}

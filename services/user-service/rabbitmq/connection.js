@@ -8,11 +8,12 @@ class connection{
     }
 
     connect=async()=>{
-        this.connection=await ampqlib.connect('ampq://localhost');
+        this.connection=await ampqlib.connect('amqp://localhost');
         this.channel=this.connection.createChannel();
 
-        await this.channel.assertExchange(exchange, "topic",{durable:true});
+         (await this.channel).assertExchange(this.exchange, "topic",{durable:true});
 
+         console.log(`connected to channel ${this.channel} in user-service`);
         return this.channel;
     }
 

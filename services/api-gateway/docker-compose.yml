@@ -1,40 +1,76 @@
-version: '3.3'
-
 
 services:
-  kong:
-    image: kong
+  
+  auth-service:
+    build: ./services/auth-service
+    ports: 
+      - "3001:3001"
     volumes:
-      - "./config:/usr/local/kong/declarative"
+      - ./services/auth-service:/auth-service
+    networks:
+      - my-network
+  task-service:
+    build: ./services/task-service
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./services/task-service:/task-service
+    networks:
+      - my-network
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./services/user-service:/services/user-service
+    networks:
+      - my-network
+  team-service:
+    build: ./services/team-service
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/team-service:/services/team-service
+    networks:
+      - my-network
+
+  
+
+                                                    #kong api gateway service
+  kong-dbless:
+    image: '${GW_IMAGE:-kong/kong-gateway:3.12.0.0}' #the image 
+
+    container_name: kong-dbless-readonly              #name of the container
+    read_only: true                                   #set only read mode
+    restart: unless-stopped                           #restart unless manually stopped
+    networks:
+      - my-network                                       #network to connect with
+
+    volumes:                                           #data folders
+      - ./declarative:/kong/declarative/
+      - ./tmp_volume:/tmp
+      - ./prefix_volume:/var/run/
+
     environment:
-      - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
-      - KONG_PROXY_ACCESS_LOG=/dev/stdout
-      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
-      - KONG_PROXY_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
-      - KONG_LOG_LEVEL=debug
-      - KONG_PLUGINS=bundled
-    ports:
-      - "8000:8000/tcp"
-      - "127.0.0.1:7990:8001/tcp"
-      - "8001:8001/tcp"
-      - "8443:8443/tcp"
-      - "127.0.0.1:8444:8444/tcp"
-    depends_on:
-      - app3
-    networks:
-      - mynet
-
-  app3:
-    image: app3
-    container_name: app3
-    ports:
-      - "3000:3000"
-    networks:
-      - mynet
-
+      KONG_PREFIX: /var/run/kong                          #sests prefix
+      KONG_DATABASE: off
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml #where the config file is
+      KONG_PROXY_ACCESS_LOG: /dev/stdout                  # load from yaml file
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout                  # load from yaml file
+      KONG_PROXY_ERROR_LOG: /dev/stderr                   # load from yaml file
+      KONG_ADMIN_ERROR_LOG: /dev/stderr                   # load from yaml file
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports: 
+      - "8000:8000"                                       #http main traffic
+      - "8443:8443"                                       #https
+      - "8001:8001"                                       #admin api
+      - "8444:8444"                                       #admin api https
+      - "8002:8002"                                       #kong manager ui
 networks:
-  mynet:
+  my-network:
     driver: bridge
+    
+
+
+    

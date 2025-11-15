@@ -8,12 +8,12 @@ export const userRouter=express.Router();
 userRouter.get("/",verifyRequest,userController.findUser);
 userRouter.put("/",verifyRequest,userController.updateUser);
 userRouter.delete("/",verifyRequest,userController.deleteUser);
-userRouter.post("/",verifyRequest,userController.createUser);
+userRouter.post("/",userController.createUser);
 
 
 
-
-userRouter.get("/:userId/task",validateTaskReq,taskContoller.getAll);
-userRouter.post("/:userId/task",validateTaskReq,taskContoller.createTask);
-userRouter.put("/:userId/task/:taskId",validateTaskReq,taskContoller.updateTask);
-userRouter.delete("/:userId/task/:taskId",validateTaskReq,taskContoller.deleteTask);
+// userRouter.get("/:userId/:taskId",validateTaskReq,taskContoller.getAll);
+userRouter.get("/:userId/task",verifyRequest,taskContoller.getAll);
+userRouter.post("/:userId/task",verifyRequest,validateTaskReq,taskContoller.createTask);
+userRouter.put("/:userId/task/:taskId",verifyRequest,validateTaskReq,taskContoller.updateTask);
+userRouter.delete("/:userId/task/:taskId",verifyRequest,taskContoller.deleteTask);

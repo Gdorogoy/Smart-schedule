@@ -96,7 +96,7 @@ const createUser = async (req, res) => {
         {
           userId: user._id.toString(),
           email: user.email,
-          firstname,
+          firstname:firstname,
           lastname: lastname || "",
           timeZone: timeZone || "UTC"
         }

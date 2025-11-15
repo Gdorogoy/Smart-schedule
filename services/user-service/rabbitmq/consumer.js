@@ -3,7 +3,7 @@ import connection from "./connection.js";
 class consumer{
     subscribe=async(routingKey , handler)=>{
         const channel= await connection.getChannel();
-        const exchange= connection.exchange();
+        const exchange= connection.exchange;
         const queue = `user-service_${routingKey}_queue`;
 
         channel.assertQueue(queue);

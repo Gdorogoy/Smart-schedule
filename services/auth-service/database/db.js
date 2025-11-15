@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-import { URI } from "../config";
+import { URI } from "../config/config.js";
 
 export const connectDb =async()=>{
+
     try{
         await mongoose.connect(URI);
         console.log("AUTH SERVICE CONNECTED");

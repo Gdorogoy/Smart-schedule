@@ -9,19 +9,19 @@ class connection{
     }
 
     connect=async()=>{
-        this.connection=await amqplib.connect('amqplib://localhost');
+        this.connection=await amqplib.connect('amqp://localhost');
         this.channel=await this.connection.createChannel();
 
         await this.channel.assertExchange(this.exchange,"topic",{durable:true});
 
-        console.log(`connected to channel ${this.channel} on team-service`);
+        console.log(`connected to channel ${this.channel} on task-service`);
 
         return this.channel;    
     }
 
     getChannel=async()=>{
         if(!this.channel){
-            return this.connect;
+            return await this.connect();
         }
         return this.channel;
     }

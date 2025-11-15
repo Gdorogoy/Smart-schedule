@@ -2,8 +2,7 @@ import { User } from "../model/user.js";
 
 const createUser = async (req, res) => {
   try {
-    const {userId,email}=req.user;
-    const {firstname,lastname,timeZone}=req.body;
+    const {firstname,lastname,timeZone,email,userId}=req.body;
     const user = {
         userId,
         email,
@@ -40,62 +39,68 @@ const createUser = async (req, res) => {
 
 
 
-const findUser=async(req,res)=>{
-    try{
-        const {userId}=req.user;
-        const user = await User.findOne({ userId });
+const findUser = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findOne({ userId });
 
-        if(!user){
-            res.json({status:"bad",content:"User not found"});
-        }
-
-        res.status(200).json({status:"good",content:user});
-
-    }catch(err){
-        res.json({status:"bad",content:err.message});
+    if (!user) {
+      return res.status(404).json({ status: "bad", content: "User not found" });
     }
-}
+
+    return res.status(200).json({ status: "good", content: user });
+
+  } catch (err) {
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+};
 
 
-const updateUser=async(req,res)=>{
-    try{
-        const {userId,email}=req.user;
-        const {firstname,lastname,timeZone}=req.body;
 
-        const user=await User.findByIdAndUpdate(userId,{
-            email:email,
-            firstname:firstname,
-            lastname:lastname,
-            timeZone:timeZone,
-            password:password
-        });
+const updateUser = async (req, res) => {
+  try {
+    const { userId, email } = req.user;
+    const { firstname, lastname, timeZone } = req.body;
 
-        user.save();
+    const updatedUser = await User.findOneAndUpdate(
+      { userId },
+      { email, firstname, lastname, timeZone },
+      { new: true }
+    );
 
-        res.json({status:"good",content:user});
-
-    }catch(err){
-        res.json({status:"bad",content:err.message});
+    if (!updatedUser) {
+      return res.status(404).json({ status: "bad", content: "User not found" });
     }
-}
 
-const deleteUser=async(req,res)=>{
-    try{
-        const {userId}=req.user;
-        const userProfile = await User.findOneAndUpdate(
-            {  userId },
-            { isActive: false, deletedAt: new Date() },
-            { new: true }
-        );
-        if(!userProfile){
-            res.json({status:"bad",content:"error in deleting user"});
-        }
-        res.json({status:"good",content:userProfile});
+    return res.status(200).json({ status: "good", content: updatedUser });
+
+  } catch (err) {
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+};
+
+
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.user;
     
-    }catch(err){
-        res.json({status:"bad",content:err.message});
+    const userProfile = await User.findOneAndUpdate(
+      { userId },
+      { isActive: false, deletedAt: new Date() },
+      { new: true }
+    );
+
+    if (!userProfile) {
+      return res.status(404).json({ status: "bad", content: "User not found" });
     }
-}
+
+    return res.status(200).json({ status: "good", content: userProfile });
+
+  } catch (err) {
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+};
+
 
 
 export default{

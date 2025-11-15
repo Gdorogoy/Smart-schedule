@@ -1,26 +1,39 @@
 _format_version: "3.0"
 
 services:
-  - name: app3
-    url: "http://app3:3000"
+
+    # 3 here for each service we implement a route ,
+    # where lets say we get : GET http://localhost:8000/user/profile
+    # we redirect to http://use-service:3003/user/profile
+
+  - name: user-service
+    url: "http://user-service:3003"
     routes:
-      - name: app3-route
+      - name: "user-route"
         paths:
-          - /app3
+          - /user
 
-    plugins:
-      - name: cors
-        config:
-          origin:
-          - "http://*"
-          methods:
-          - GET
-          - POST
-      - name: rate-limiting
-        config:
-          second: 5
-          hour: 10
-          policy: local
+  - name: auth-service
+    url: "http://auth-service:3001"
+    routes:
+      - name: "auth-route"
+        paths:
+          - /auth
+
+  - name: task-service
+    url: "http://task-service:3004"
+    routes:
+      - name: "task-route"
+        paths:
+          - /task
+
+  - name: team-service
+    url: "http://team-service:3002"
+    routes:
+      - name: "team-route"
+        paths:
+          - /team
 
 
 
+ 

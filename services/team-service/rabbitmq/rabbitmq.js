@@ -1,7 +1,7 @@
 import amqplib from 'amqplib'
 
 
-class rabbitmq{
+class connection{
     constructor(){
         this.connection=null;
         this.channel=null;
@@ -29,4 +29,4 @@ class rabbitmq{
     }
 }
 
-export default new rabbitmq;
+export default new connection;

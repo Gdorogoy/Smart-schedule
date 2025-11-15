@@ -5,7 +5,8 @@ export const verifyRequest=(req,res,next)=>{
 
     const headers=req.headers.authorization;
 
-    if(!headers || !headers.startWith("Bareer")){
+    if(!headers || !headers.startsWith("Bearer")){
+        console.log(headers);
         return res.status(403).json({status:"bad",content:"must include jwt"});
     }
 
