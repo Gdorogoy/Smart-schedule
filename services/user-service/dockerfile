@@ -1,0 +1,19 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the app
+COPY . .
+
+# Set default PORT if not provided
+ENV PORT=3000
+
+# Document the port (won't use env var here, so just pick default)
+EXPOSE 3000
+
+# Start the app
+CMD ["npm", "run", "dev"]

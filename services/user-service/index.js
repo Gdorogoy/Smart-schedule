@@ -18,10 +18,18 @@ server.use("/api/v1/users",userRouter);
 
 server.listen(PORT||3002, async()=>{
     console.log("================================");
-    console.log(`USER SERVICE || PORT :${PORT}`);
-    const channel=await connection.connect();
-    console.log(`rabbitmq || connected`);
+    console.log(`USERssss SERVICE || PORT :${PORT}`);
+
+    try {
+        await connection.getChannel(); 
+    } catch (err) {
+        console.error("RABBITMQ FAILED:", err);
+        process.exit(1);
+    }
+
     await startConsumer();
+    console.log(`listening for events`);
+
     await connectDb();
     console.log("================================");
 

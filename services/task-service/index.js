@@ -13,12 +13,20 @@ server.use(express.json());
 
 server.use("/api/v1/tasks",taskRouter);
 
-server.listen(PORT ||3004,async()=>{
+server.listen(PORT || 3004, async () => {
     console.log("================================");
-    console.log(`TASK SERVICE || PORT :${PORT}`);
-    const channel=await connection.connect();
-    console.log(`rabbitmq || connected`);
+    console.log(`TASK SERVICE || PORT: ${PORT}`);
+
+    try {
+        await connection.getChannel(); 
+    } catch (err) {
+        console.error("RABBITMQ FAILED:", err);
+        process.exit(1);
+    }
+
     await startConsumer();
+    console.log(`listening for events`);
+
     await connectDb();
     console.log("================================");
 });
