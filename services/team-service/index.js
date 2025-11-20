@@ -6,7 +6,7 @@ const server=express();
 
 server.use(express.json());
 
-server.route('/api/v1/team',);
+server.route('/team',);
 
 server.listen(PORT || 3003, async () => {
     console.log("================================");

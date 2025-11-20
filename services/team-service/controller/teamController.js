@@ -3,7 +3,7 @@ import producer from "../rabbitmq/producer";
 
 const getTeam=async(req,res)=>{
     try{
-        const {teamId}=req.team;
+        const teamId=req.param.teamId;
         const team=await Team.findById(teamId);
         res.status(200).json({status:"good",content:team});
     }catch(err){
@@ -13,7 +13,7 @@ const getTeam=async(req,res)=>{
 }
 const createTeam=async(req,res)=>{
     try{
-        const {teamId,userId}=req.team;
+        const {userId}=req.user;
         const {name,description}=req.body;
         let joinCode;
         do {
@@ -48,7 +48,8 @@ const updateTeam=async(req,res)=>{
             }
         }
         */  
-        const {teamId,userId}=req.team;
+        const {userId}=req.user;
+        const teamId=req.param.teamId;
         const team=await Team.findById(teamId);
         const teamUsers=team.members;
         const teamLeads=team.teamLeads;
@@ -108,8 +109,8 @@ const updateTeam=async(req,res)=>{
 
 const assingTasksToTeam=async(req,res)=>{
     try{
-        const {teamId,userId}=req.team;
-
+        const {userId}=req.user;
+        const teamId=req.param.teamId;
         const team=await Team.findById(teamId);
         const userList=req.body.users;
         const task=req.body.task;
@@ -152,7 +153,8 @@ const assingTasksToTeam=async(req,res)=>{
 }
 const deleteFromTeam=async(req,res)=>{
     try{
-        const {teamId,userId}=req.team;
+        const {userId}=req.user;
+        const teamId=req.param.teamId;
 
         const team=await Team.findById(teamId);
         const userList=req.body.users;
@@ -177,6 +179,19 @@ const deleteFromTeam=async(req,res)=>{
             !userList.some(usr => memb.userId.toString() === usr.userId.toString())
         );
         await Team.findByIdAndUpdate(teamId, { members: updatedMembers });
+        res.status(200).json({status:"good",content:"deleted"});
+
+    }catch(err){
+        console.error(err);
+        res.status(500).json({status:"bad", content: err.message});
+    }
+}
+
+const getAllTeams=async(req,res)=>{
+    try{
+        const {userId}=req.user;
+        const teams=await Team.find({userId});
+        res.status(200).json({status:"good",content:teams});
     }catch(err){
         console.error(err);
         res.status(500).json({status:"bad", content: err.message});
@@ -188,5 +203,6 @@ export default{
     deleteFromTeam,
     getTeam,
     assingTasksToTeam,
-    updateTeam
+    updateTeam,
+    getAllTeams
 }

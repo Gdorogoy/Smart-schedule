@@ -11,7 +11,7 @@ server.use(express.json());
 
 
 
-server.use("/api/v1/tasks",taskRouter);
+server.use("/tasks",taskRouter);
 
 server.listen(PORT || 3004, async () => {
     console.log("================================");

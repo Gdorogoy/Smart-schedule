@@ -6,25 +6,14 @@ import { authRouter } from "./services/auth-service/router/authRouter.js";
 import cors from 'cors'
 
 /*
-    1.learn rabbitmq
-    2.create orrganiztation :{
-        name,
-        teams,
-        employees,
-        username,
-        passowrd,
-    }
-    3.create crud operrations until rabbitmq needed then add rabbitmq
-    4.teams:{
-        name,
-        employees,
-        authEmployees
-    }
-    5 update employee so he would have:{
-        role,
-        job title,
-        orrganiztation
-    }
+
+//todo finish kong setup (no auth)
+//todo connect all services
+//todo update frontend
+
+
+
+
 */
 
 

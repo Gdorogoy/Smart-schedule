@@ -14,11 +14,11 @@ const server=express();
 
 server.use(express.json());
 server.use(errorHandler);
-server.use("/api/v1/users",userRouter);
+server.use("/user",userRouter);
 
 server.listen(PORT||3002, async()=>{
     console.log("================================");
-    console.log(`USERssss SERVICE || PORT :${PORT}`);
+    console.log(`USER SERVICE || PORT :${PORT}`);
 
     try {
         await connection.getChannel(); 

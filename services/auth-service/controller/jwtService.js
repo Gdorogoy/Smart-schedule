@@ -92,7 +92,7 @@ const createUser = async (req, res) => {
 
     try {
       const profileResponse = await axios.post(
-        `http://localhost:3002/api/v1/users`,
+        `http://kong-dbless:8000/user/create`,
         {
           userId: user._id.toString(),
           email: user.email,

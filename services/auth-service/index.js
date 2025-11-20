@@ -9,7 +9,7 @@ const server=express();
 
 server.use(express.json());
 
-server.use("/api/v1/auth",authRouter);
+server.use("/auth",authRouter);
 
 server.listen(PORT|| 3001, async()=>{
     console.log("================================");

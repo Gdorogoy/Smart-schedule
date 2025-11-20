@@ -4,10 +4,11 @@ import { verifyRequest } from '../middleware/authMiddleware';
 
 const router=express.Router();
 
-router.get('/',verifyRequest,teamController.getTeam);
-router.post('/',verifyRequest,teamController.createTeam);
-router.put('/update',verifyRequest,teamController.updateTeam);
-router.put('/assisgn',verifyRequest,teamController.assingTasksToTeam);
-router.delete('/',verifyRequest,teamController.deleteFromTeam);
+router.get('/get/:teamId',verifyRequest,teamController.getTeam);
+router.get('/getAll',verifyRequest,teamController.getTeam);
+router.post('/create',verifyRequest,teamController.createTeam);
+router.put('/update/:teamId',verifyRequest,teamController.updateTeam);
+router.put('/assisgn/:teamId',verifyRequest,teamController.assingTasksToTeam);
+router.delete('/delete/:teamId',verifyRequest,teamController.deleteFromTeam);
 
 
