@@ -9,6 +9,6 @@ authRouter.post("/signup",jwtService.createUser);
 authRouter.put("/logout/:userId",validateReq,jwtService.invalidateToken);
 authRouter.post("/login",validateReqLog,jwtService.login);
 authRouter.post("/refresh",jwtService.refreshToken);
-authRouter.delete("/delete",jwtService.deleteUser);
-authRouter.put("/invalidate",jwtService.invalidateToken);
+authRouter.delete("/delete/:userId",jwtService.deleteUser);
+authRouter.put("/invalidate/:userId",jwtService.invalidateToken);
 

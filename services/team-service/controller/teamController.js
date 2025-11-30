@@ -3,7 +3,7 @@ import producer from "../rabbitmq/producer";
 
 const getTeam=async(req,res)=>{
     try{
-        const teamId=req.param.teamId;
+        const teamId=req.params.teamId;
         const team=await Team.findById(teamId);
         res.status(200).json({status:"good",content:team});
     }catch(err){
@@ -49,10 +49,10 @@ const updateTeam=async(req,res)=>{
         }
         */  
         const {userId}=req.user;
-        const teamId=req.param.teamId;
+        const teamId=req.params.teamId;
         const team=await Team.findById(teamId);
-        const teamUsers=team.members;
-        const teamLeads=team.teamLeads;
+        const teamUsers=[...team.members];
+        const teamLeads=[...team.teamLeads];
         const userList=req.body.users;
 
 
@@ -61,17 +61,20 @@ const updateTeam=async(req,res)=>{
             then adding each new user or updated user to temp list 
         */
 
-        userList.map(usr=>{
+        userList.forEach(usr=>{
             const payload={
                 userId:usr.userId,
                 teamId:teamId,
                 role:usr.role,
             }
             producer.sendEvent("UPDATE_USERS",payload);
+            
             if(!teamUsers.some(member => member.userId.toString() === usr.userId.toString())){
                 teamUsers.push(usr);
             }
-            if(usr.role==="teamlead"){
+            if(usr.role==="teamlead" &&
+                !teamLeads.some(lead=> lead.userId.toString()===usr.userId.toString())
+            ){
                 teamLeads.push(usr);
             }
         });
@@ -107,10 +110,10 @@ const updateTeam=async(req,res)=>{
     }
 }
 
-const assingTasksToTeam=async(req,res)=>{
+const assignTasksToTeam=async(req,res)=>{
     try{
         const {userId}=req.user;
-        const teamId=req.param.teamId;
+        const teamId=req.params.teamId;
         const team=await Team.findById(teamId);
         const userList=req.body.users;
         const task=req.body.task;
@@ -134,11 +137,11 @@ const assingTasksToTeam=async(req,res)=>{
             sending each user as a message then letting the task service to handle it;
         */
 
-        userList.map(usr=>{
+        userList.forEach(usr=>{
             const payload={
                 belongsTo:usr.userId,
                 task:task,
-                assignedBt
+                assignedBy:userId
             }
             producer.sendEvent("ASSIGN_TASK",payload);
         });
@@ -154,7 +157,7 @@ const assingTasksToTeam=async(req,res)=>{
 const deleteFromTeam=async(req,res)=>{
     try{
         const {userId}=req.user;
-        const teamId=req.param.teamId;
+        const teamId=req.params.teamId;
 
         const team=await Team.findById(teamId);
         const userList=req.body.users;
@@ -167,7 +170,11 @@ const deleteFromTeam=async(req,res)=>{
             3th update the team so it would not contain the delted user;
         */
 
-        userList.map(usr=>{
+        if(!userList){
+            return res.status(200).json({status:"good",message:"no one to delete"});
+        }
+
+        userList.forEach(usr=>{
             const payload={
                 userId:usr.userId,
                 teamId:teamId
@@ -190,8 +197,12 @@ const deleteFromTeam=async(req,res)=>{
 const getAllTeams=async(req,res)=>{
     try{
         const {userId}=req.user;
-        const teams=await Team.find({userId});
-        res.status(200).json({status:"good",content:teams});
+        const teamsWhereMember=await Team.find({"members.userId":userId});
+        const teamsWehereLead=await Team.find({teamLeads:userId});
+        res.status(200).json({status:"good",content:{
+            lead:teamsWehereLead,
+            member:teamsWhereMember
+        }});
     }catch(err){
         console.error(err);
         res.status(500).json({status:"bad", content: err.message});
@@ -202,7 +213,7 @@ export default{
     createTeam,
     deleteFromTeam,
     getTeam,
-    assingTasksToTeam,
+    assignTasksToTeam,
     updateTeam,
     getAllTeams
 }

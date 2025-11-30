@@ -46,7 +46,7 @@ const userProfileSchema = new mongoose.Schema({
     teams: [{
         teamId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Team',  // Fixed reference
+            ref: 'Team',
             required: true
         },
         role: {

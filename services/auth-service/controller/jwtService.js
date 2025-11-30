@@ -56,7 +56,7 @@ const refreshToken = async (req, res) => {
     }
 
     const user = await User.findById(decoded.userId);
-    if (!user || !user.isActive) {
+    if (!user) {
       return res.status(401).json({ error: "User not found or inactive" });
     }
 
@@ -161,17 +161,18 @@ const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    if (!authUser.isActive) {
-      return res.status(401).json({ error: "Account is deactivated" });
-    }
-
     const match = await bcrypt.compare(password, authUser.password);
     if (!match) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    const userId=authUser.id;
+    console.log(authUser);
+    console.log(userId);
+
     const response = await axios.get(
-    `http://localhost:3002/api/v1/users/${authUser._id.toString()}`
-    );
+  `http://kong-dbless:8000/user/get/${authUser.id}`);
+  
     const user = response.data;
   
 
@@ -184,13 +185,13 @@ const login = async (req, res) => {
       token: refreshToken,
       userId: authUser.id
     });
-    
+
     await refreshTokenDoc.save();
 
     authUser.lastLogin = new Date();
     await authUser.save();
 
-    return res.json({
+    return res.status(200).json({
       token,
       refreshToken,
       user,
@@ -240,14 +241,14 @@ const deleteUser = async (req, res) => {
     );
 
     try {
-      await axios.delete(` http://localhost:3002/api/v1/users/${userId}`);
+      await axios.delete(` http://kong-dbless:8000/user/delete/${userId}`);
       console.log("User Service notified of deletion");
     } catch (error) {
       console.error("User Service deletion failed:", error.message);
-      res.status(500).json({err:error});
+      return res.status(500).json({err:error});
     }
 
-    res.json({ success: true, message: "User deleted" });
+    return res.status(200).json({ success: true, message: "User deleted" });
 
   } catch (err) {
     console.error("Error deleting user:", err.message);

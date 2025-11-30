@@ -10,7 +10,7 @@ export const verifyRequest=(req,res,next)=>{
         return res.status(403).json({status:"bad",content:"must include jwt"});
     }
 
-    const token=headers.split("")[1];
+    const token=headers.split(" ")[1];
 
     try {
         const decoded = jwt.verify(token, PUBLIC_KEY, { algorithms: ["RS256"] });

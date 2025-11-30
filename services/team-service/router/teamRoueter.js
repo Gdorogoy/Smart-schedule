@@ -2,13 +2,15 @@ import express from 'express'
 import teamController from '../controller/teamController';
 import { verifyRequest } from '../middleware/authMiddleware';
 
-const router=express.Router();
+export const router=express.Router();
 
 router.get('/get/:teamId',verifyRequest,teamController.getTeam);
-router.get('/getAll',verifyRequest,teamController.getTeam);
+router.get('/getAll',verifyRequest,teamController.getAllTeams);
 router.post('/create',verifyRequest,teamController.createTeam);
 router.put('/update/:teamId',verifyRequest,teamController.updateTeam);
-router.put('/assisgn/:teamId',verifyRequest,teamController.assingTasksToTeam);
+router.put('/assign/:teamId',verifyRequest,teamController.assignTasksToTeam);
 router.delete('/delete/:teamId',verifyRequest,teamController.deleteFromTeam);
+//todo router.delete('/delete/teams/:teamId',verifyRequest,teamController.deleteFromTeam);
+
 
 
