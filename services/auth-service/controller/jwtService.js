@@ -6,6 +6,11 @@ import axios from "axios";
 import { JWT_REFRESH_SECRET, PRIVATE_KEY } from "../config/config.js";
 
 
+
+
+/*
+  Generating tokens( refresh and accsses) for user
+*/
 const generateTokens = (user) => {
   const payload = { userId: user.id, email: user.email };
   const token = jwt.sign(payload, PRIVATE_KEY, {
@@ -16,6 +21,10 @@ const generateTokens = (user) => {
   return { token, refreshToken };
 };
 
+/*
+  refreshing the accsses token
+  checking if the refresh token is valid first
+*/
 const refreshToken = async (req, res) => {
   try {
     const { refreshToken} = req.body;
@@ -73,6 +82,11 @@ const refreshToken = async (req, res) => {
   }
 };
 
+/*
+  registerating user adding the user to userprofile database via user-service
+    adding user to user database adding token to token database
+    returning tokens and user info
+*/
 const createUser = async (req, res) => {
   try {
     const { email, firstname, lastname, timeZone, password } = req.body;
@@ -152,6 +166,10 @@ const createUser = async (req, res) => {
   }
 };
 
+
+/*
+  loging in user if password and email match and giving him tokens 
+*/
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -204,7 +222,9 @@ const login = async (req, res) => {
   }
 };
 
-
+/*
+  invalidating user token for logout
+*/
 const invalidateToken = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -222,6 +242,9 @@ const invalidateToken = async (req, res) => {
   }
 };
 
+/*
+  deleting user and its tokens,profile 
+*/
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;

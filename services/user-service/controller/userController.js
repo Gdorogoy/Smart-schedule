@@ -1,5 +1,9 @@
 import { User } from "../model/user.js";
 
+
+/*
+  creating method (used by sing up method in auth service)
+*/
 const createUser = async (req, res) => {
   try {
     const {firstname,lastname,timeZone,email,userId}=req.body;
@@ -37,7 +41,9 @@ const createUser = async (req, res) => {
   }
 };
 
-
+/*
+  finding user by id 
+*/
 
 const findUser = async (req, res) => {
   try {
@@ -59,6 +65,9 @@ const findUser = async (req, res) => {
 
 
 
+/*
+  updating user
+*/
 const updateUser = async (req, res) => {
   try {
     const { userId, email } = req.user;
@@ -81,7 +90,9 @@ const updateUser = async (req, res) => {
   }
 };
 
-
+/*
+  deliting user 
+*/
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.user;

@@ -1,5 +1,10 @@
 import { Task } from "../model/task.js";
 
+
+
+/*
+  creating task for user 
+*/
 const createTask = async (req, res) => {
   try {
     const { title, description, importance, start, end, color } = req.body;
@@ -29,6 +34,10 @@ const createTask = async (req, res) => {
   }
 };
 
+
+/*
+  returning specific task by id 
+*/
 const getTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -43,6 +52,10 @@ const getTask = async (req, res) => {
   }
 };
 
+
+/*
+  returning all user tasks
+*/
 const getTasks = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -63,6 +76,10 @@ const getTasks = async (req, res) => {
   }
 };
 
+
+/*
+  updating users task
+*/
 const updateTask = async (req, res) => {
   try {
     const { title, description, importance, start, end, color, status } = req.body;
@@ -84,6 +101,10 @@ const updateTask = async (req, res) => {
   }
 };
 
+
+/*
+  deleting user task
+*/
 const deleteTask = async (req, res) => {
   try {
     const deleted = await Task.findByIdAndDelete(req.params.id);

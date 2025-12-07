@@ -16,7 +16,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "dev": "npm run auth & npm run user & npm run task & npm run team",
+    "dev": "pnpm run auth & npm run user & npm run task & npm run team",
     "auth": "cd services/auth-service && npm run dev",
     "user": "cd services/user-service && npm run dev",
     "task": "cd services/task-service && npm run dev",
