@@ -1,5 +1,5 @@
-import { Team } from "../model/team"
-import producer from "../rabbitmq/producer";
+import { Team } from "../model/team.js"
+import producer from "../rabbitmq/producer.js";
 
 /*
     getting a specific team by id 

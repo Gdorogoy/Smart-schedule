@@ -105,16 +105,25 @@ const createUser = async (req, res) => {
     await user.save();
 
     try {
-      const profileResponse = await axios.post(
-        `http://kong-dbless:8000/user/create`,
-        {
-          userId: user._id.toString(),
-          email: user.email,
-          firstname:firstname,
-          lastname: lastname || "",
-          timeZone: timeZone || "UTC"
-        }
-      );
+      const url = `http://kong-dbless:8000/users/create`;
+      const payload = {
+        userId: user._id.toString(),
+        email: user.email,
+        firstname: firstname,
+        lastname: lastname || "",
+        timeZone: timeZone || "UTC"
+      };
+      
+      console.log("=== CALLING USER SERVICE ===");
+      console.log("URL:", url);
+      console.log("Payload:", JSON.stringify(payload));
+      
+      const profileResponse = await axios.post(url, payload);
+      
+      console.log("=== USER SERVICE RESPONSE ===");
+      console.log("Status:", profileResponse.status);
+      console.log("Data:", profileResponse.data);
+
 
     console.log("User Service responded:", profileResponse.data);
     if (profileResponse.status !== 201) {
@@ -161,6 +170,10 @@ const createUser = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("=== USER SERVICE ERROR ===");
+    console.error("Message:", userServiceError.message);
+    console.error("Status:", userServiceError.response?.status);
+    console.error("Data:", userServiceError.response?.data);
     console.error("Error in createUser:", err.message);
     return res.status(500).json({ error: err.message });
   }
@@ -189,7 +202,7 @@ const login = async (req, res) => {
     console.log(userId);
 
     const response = await axios.get(
-  `http://kong-dbless:8000/user/get/${authUser.id}`);
+  `http://kong-dbless:8000/users/get/${authUser.id}`);
   
     const user = response.data;
   
@@ -264,7 +277,7 @@ const deleteUser = async (req, res) => {
     );
 
     try {
-      await axios.delete(` http://kong-dbless:8000/user/delete/${userId}`);
+      await axios.delete(` http://kong-dbless:8000/users/delete/${userId}`);
       console.log("User Service notified of deletion");
     } catch (error) {
       console.error("User Service deletion failed:", error.message);

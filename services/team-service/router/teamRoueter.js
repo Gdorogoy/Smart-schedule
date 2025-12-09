@@ -1,6 +1,6 @@
 import express from 'express'
-import teamController from '../controller/teamController';
-import { verifyRequest } from '../middleware/authMiddleware';
+import teamController from '../controller/teamController.js';
+import { verifyRequest } from '../middleware/authMiddleware.js';
 
 export const router=express.Router();
 

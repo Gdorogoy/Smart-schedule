@@ -6,34 +6,39 @@ services:
     routes:
       - name: "user-route"
         paths:
-          - /user
+          - ~/users
+          - ~/users/
+          - ~/users/.*
         strip_path: false
-
 
   - name: auth-service
     url: "http://auth-service:3001"
     routes:
       - name: "auth-route"
         paths:
-          - /auth
+          - ~/auth
+          - ~/auth/
+          - ~/auth/.*
         strip_path: false
-
 
   - name: task-service
     url: "http://task-service:3004"
     routes:
       - name: "task-route"
         paths:
-          - /task
+          - ~/tasks
+          - ~/tasks/
+          - ~/tasks/.*
         strip_path: false
-
 
   - name: team-service
     url: "http://team-service:3003"
     routes:
       - name: "team-route"
         paths:
-          - /
+          - ~/teams
+          - ~/teams/
+          - ~/teams/.*
         strip_path: false
 
 plugins:

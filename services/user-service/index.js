@@ -13,8 +13,9 @@ const server=express();
 
 
 server.use(express.json());
-server.use(errorHandler);
 server.use("/users",userRouter);
+server.use(errorHandler);
+
 
 server.listen(PORT||3002, async()=>{
     console.log("================================");
