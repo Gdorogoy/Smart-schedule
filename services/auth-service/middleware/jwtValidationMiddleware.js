@@ -1,20 +1,36 @@
 import jwt from 'jsonwebtoken'
 
 export const authenticateToken = async (req, res,next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) {
-        
-        return res.status(403).json({ error: "Missing token" });
-    }
+    const authHeader = req.headers.authorization;
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: err });
-        }
+    if(!authHeader || authHeader!== 'Baerer'){
+        return res.status(401).json({
+            status:"bad",
+            message:"Token required"
+        });
+    }
+    const token = authHeader && authHeader.split(" ")[1];
+    try{
+        const decoded=jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         req.user = user;
         next();
     });
+    }catch(err){
+        console.log(err);
+        if(err.name==="TokenExpiredError"){
+            return res.status(403).json({
+                status: "bad",
+                content: "Token expired"
+            });
+        }
+        else{
+            return res.status(401).json({
+                status:"bad",
+                content:"Token expired"
+            });
+        }
+    }
+
 };
 
 

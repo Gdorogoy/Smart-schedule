@@ -6,8 +6,10 @@ export const verifyRequest=(req,res,next)=>{
     const headers=req.headers.authorization;
 
     if(!headers || !headers.startsWith("Bearer")){
-        console.log(headers);
-        return res.status(403).json({status:"bad",content:"must include jwt"});
+        return res.status(401).json({
+            status:"bad",
+            content:"must include jwt"
+        });
     }
 
     const token=headers.split(" ")[1];
@@ -17,6 +19,15 @@ export const verifyRequest=(req,res,next)=>{
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ error: "Invalid or expired token" });
+        console.log(err);
+        if(err.name==="TokenExpiredError"){
+            return res.status(403).json({
+                status:"bad",
+                content:"Token expired"
+            });
+        }
+        return res.status(401).json({
+            error: "Invalid or expired token" 
+        });
   }
 };

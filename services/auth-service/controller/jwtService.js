@@ -27,22 +27,23 @@ const generateTokens = (user) => {
 */
 const refreshToken = async (req, res) => {
   try {
-    const { refreshToken} = req.body;
+    const authHeader = req.headers.authorization;
 
-    if (!refreshToken) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(400).json({ error: "Missing refresh token" });
     }
 
+    const rtoken = authHeader.split(" ")[1];
 
     let decoded=null;
     try {
-      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+      decoded = jwt.verify(rtoken, JWT_REFRESH_SECRET);
     } catch (err) {
       return res.status(401).json({ error: "Invalid refresh token" });
     }
 
     const tokenDoc = await RefreshToken.findOne({ 
-      token: refreshToken,
+      token: rtoken,
       userId:decoded.userId
     });
 
@@ -69,7 +70,7 @@ const refreshToken = async (req, res) => {
       return res.status(401).json({ error: "User not found or inactive" });
     }
 
-    const payload = { userId: user._id, email: user.email };
+    const payload = { userId: user._id.toString(), email: user.email };
     const token = jwt.sign(payload, PRIVATE_KEY, {
       algorithm: "RS256",
       expiresIn: "15m",
@@ -131,14 +132,14 @@ const createUser = async (req, res) => {
         return res.status(500).json({ error: "User service failed to create profile" });
       }
 
-    } catch (userServiceError) {
-      console.error(" User Service error:", userServiceError.message);
+    } catch (err) {
+      console.error(" User Service error:", err.message);
       
       await User.findByIdAndDelete(user._id);
       
       return res.status(500).json({ 
         error: "Failed to create user profile",
-        details: userServiceError.response?.data || userServiceError.message
+        details: err.response?.data || err.message
       });
     }
 
@@ -171,9 +172,9 @@ const createUser = async (req, res) => {
 
   } catch (err) {
     console.error("=== USER SERVICE ERROR ===");
-    console.error("Message:", userServiceError.message);
-    console.error("Status:", userServiceError.response?.status);
-    console.error("Data:", userServiceError.response?.data);
+    console.error("Message:", err.message);
+    console.error("Status:", err.response?.status);
+    console.error("Data:", err.response?.data);
     console.error("Error in createUser:", err.message);
     return res.status(500).json({ error: err.message });
   }

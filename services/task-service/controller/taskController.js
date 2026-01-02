@@ -11,7 +11,7 @@ const createTask = async (req, res) => {
     const belongsTo = req.params.userId;
 
     if (!belongsTo) {
-      return res.status(400).json({ stats: "bad", content: "Missing userId in params" });
+      return res.status(400).json({ status: "bad", content: "Missing userId in params" });
     }
 
     const task = new Task({
@@ -67,7 +67,7 @@ const getTasks = async (req, res) => {
     const tasks = await Task.find({ belongsTo: userId });
 
     return res.status(200).json({
-      stats: "good",
+      status: "good",
       content: tasks || [],
     });
   } catch (err) {
