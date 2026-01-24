@@ -114,6 +114,35 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getUserData=async(req,res)=>{
+  try{
+    console.log(req.body);
+    const members=req.body.members;
+    const teamLeads=req.body.teamLeads;
+
+    const usersData={
+      members:[],
+      teamLeads:[]
+    }
+
+    for (const member of members) {
+      const user = await User.findOne({ userId:member });
+      usersData.members.push(user);
+    }
+    
+
+    for (const lead of teamLeads) {
+      const user = await User.findOne({ userId:lead });
+      usersData.teamLeads.push(user);
+    }
+
+    return res.status(200).json({ status: "good", content: usersData });
+
+  } catch (err) {
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+}
+
 
 
 export default{
@@ -121,4 +150,5 @@ export default{
     updateUser,
     deleteUser,
     createUser,
+    getUserData
 }

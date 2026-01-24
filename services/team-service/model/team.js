@@ -17,9 +17,20 @@ const teamSchema = new mongoose.Schema({
   },
 
   teamLeads: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+   userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'teamlead', 'member'],
+      default: 'member'
+    },
+    joinedAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
 
   members: [{

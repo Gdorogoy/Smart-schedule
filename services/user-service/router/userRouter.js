@@ -8,7 +8,7 @@ userRouter.get("/get/:userId",userController.findUser);
 userRouter.put("/update",verifyRequest,userController.updateUser);
 userRouter.delete("/delete",verifyRequest,userController.deleteUser);
 userRouter.post("/create",userController.createUser);
-
+userRouter.post("/getUsersData",userController.getUserData);
 
 
 

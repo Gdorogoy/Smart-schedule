@@ -7,7 +7,7 @@ import { Task } from "../model/task.js";
 */
 const createTask = async (req, res) => {
   try {
-    const { title, description, importance, start, end, color } = req.body;
+    const { title, description, importance, start, end, color ,team} = req.body;
     const belongsTo = req.params.userId;
 
     if (!belongsTo) {
@@ -22,6 +22,7 @@ const createTask = async (req, res) => {
       end,
       color,
       belongsTo,
+      team,
       status: "pending",
     });
 
@@ -52,6 +53,22 @@ const getTask = async (req, res) => {
   }
 };
 
+const getTaskByTeam=async(req,res)=>{
+  try{
+    const teamId=req.params.teamId;
+    const tasks=await Task.find({team:teamId});
+
+    if(!tasks){
+      return res.status(404).json({content:"No tasks were found"});
+    }
+
+    return res.status(200).json({ status: "good", content: tasks });
+    
+  }catch (err) {
+    console.error(" Error in getTask:", err);
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+}
 
 /*
   returning all user tasks
@@ -154,4 +171,5 @@ export default {
   updateTask,
   deleteTask,
   changeStatus,
+  getTaskByTeam
 };

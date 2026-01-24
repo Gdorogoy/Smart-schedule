@@ -38,6 +38,10 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    team:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Team'
+    },
     dueDate:{
         type: Date
     }
