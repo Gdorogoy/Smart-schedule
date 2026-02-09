@@ -199,13 +199,8 @@ const login = async (req, res) => {
     }
 
     const userId=authUser.id;
-    console.log(authUser);
-    console.log(userId);
 
-    const response = await axios.get(
-  `http://kong-dbless:8000/users/get/${authUser.id}`);
-  
-    const user = response.data;
+
   
 
     const { token, refreshToken } = generateTokens({
@@ -222,6 +217,14 @@ const login = async (req, res) => {
 
     authUser.lastLogin = new Date();
     await authUser.save();
+
+    const response = await axios.get(
+    `http://kong-dbless:8000/users/get/${authUser.id}`,{
+       headers: { Authorization: `Bearer ${token}` },
+    });
+
+
+      const user = response.data.content;
 
     return res.status(200).json({
       token,

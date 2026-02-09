@@ -41,7 +41,8 @@ const createTask = async (req, res) => {
 */
 const getTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const userId=req.params.id;
+    const task = await Task.find({belongsTo:userId});
     if (!task) {
       return res.status(404).json({ status: "bad", content: "Task not found" });
     }

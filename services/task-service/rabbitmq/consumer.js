@@ -10,12 +10,15 @@ class consumer{
         channel.bindQueue(queue, exchange, routingKey);
 
         channel.consume(queue,async(msg)=>{
-            const content=JSON.stringify(msg);
+            if(!msg) return;
             try{
+                const content = JSON.parse(msg.content.toString());
                 await handler(content);
                 channel.ack(msg);
-            }catch{
-                channel.nack(msg);
+            }catch(err){
+                console.log(err);
+                console.error('Message content:', msg.content.toString());
+                channel.nack(msg,false,false);
                 
             }
         })

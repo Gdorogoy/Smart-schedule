@@ -16,7 +16,7 @@ class producer{
             timeStamp:new Date()
         }
 
-        await channel.publish(
+        channel.publish(
             exchange,
             routingKey, 
             Buffer.from(JSON.stringify(message)),{

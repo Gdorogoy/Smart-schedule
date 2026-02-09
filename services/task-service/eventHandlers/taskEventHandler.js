@@ -4,7 +4,10 @@ import { Task } from "../model/task.js";
 
 class taskEventHandler{
     handleAssign=async(message)=>{
-        const{belongsTo,task}=message.payload;
+        console.log('assiging')
+        const{belongsTo,task,assignedBy}=message.payload;
+        console.log(message.payload);
+        console.log(task);
 
         const taskToSave=new Task({
             belongsTo:belongsTo,
@@ -15,8 +18,9 @@ class taskEventHandler{
             end:task.end,
             color:task.color,
             status:task.status,
-            assignedBy:task.assignedBy,
-            dueDate:task.dueDate
+            assignedBy,
+            dueDate:task.dueDate,
+            team:task.team
         });
 
         await taskToSave.save();
@@ -26,14 +30,16 @@ class taskEventHandler{
     handleDelete=async(message)=>{
         const{userId,teamId}=message.payload;
         let taskToDelete=await Task.findOneAndDelete(
-    {userId:userId,
-            teamId:teamId}
-        );
+        {
+            userId:userId,
+            teamId:teamId
+        });
         while(taskToDelete){
             taskToDelete=await Task.findOneAndDelete(
-        {userId:userId,
-                teamId:teamId}
-            );
+        {
+            userId:userId,
+            teamId:teamId
+        });
         }
 
         

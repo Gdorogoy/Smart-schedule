@@ -30,10 +30,14 @@ const schema = new mongoose.Schema({
         enum:[`pending`,`in-progress`,`completed`],
         required:true
     },
-    belongsTo:{
+    belongsTo:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User'
-    },
+    }],
+    completedBy:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'User'
+    }],
     assignedBy:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

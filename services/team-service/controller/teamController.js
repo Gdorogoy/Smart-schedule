@@ -134,18 +134,28 @@ const assignTasksToTeam=async(req,res)=>{
         const userList=req.body.users;
         const task=req.body.task;
 
+        console.log(userList);
+
         if(!userList){
             return res.status(200).json({status:"good",message:"no one to add"});
         }
+        const payload={
+            belongsTo:userList,
+            task:task,
+            assignedBy:userId
+        }
+        producer.sendEvent("team.task.created",payload);
 
-        userList.forEach(usr=>{
-            const payload={
-                belongsTo:usr.userId,
-                task:task,
-                assignedBy:userId
-            }
-            producer.sendEvent("ASSIGN_TASK",payload);
-        });
+
+        // console.log(`Sending ${userList.length} events`);
+        // userList.forEach(usr=>{
+        //     const payload={
+        //         belongsTo:usr,
+        //         task:task,
+        //         assignedBy:userId
+        //     }
+        //     producer.sendEvent("team.task.created",payload);
+        // });
 
         res.status(200).json({status:"good",content:"task assigned"});
 
