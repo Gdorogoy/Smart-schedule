@@ -102,11 +102,11 @@ const updateTask = async (req, res) => {
   try {
     const { taskId,userId } = req.params;
 
-    const { title, description, importance, start, end, color, status } = req.body;
+    const { title, description, importance, start, end, color, status ,assignedBy,completedBy} = req.body;
 
     const updated = await Task.findByIdAndUpdate(
       taskId,
-      { title, description, importance, start, end, color, status },
+      { title, description, importance, start, end, color, status ,assignedBy,completedBy},
       { new: true }
     );
 
@@ -121,6 +121,25 @@ const updateTask = async (req, res) => {
   }
 };
 
+const completeTask= async(req, res)=>{
+  try{
+    const {taskId,userId}=req.params
+    
+    const updated= await Task.findByIdAndUpdate(
+      taskId,
+      {$addToSet:{completedBy:userId}},
+      {new:true});
+
+      if(!updated){
+        return res.status(404).json({ status: "bad", content: "Task not found" });
+      }
+      return res.status(200).json({ status: "good", content: updated });
+
+  }catch(err){
+    console.error(" Error in updateTask:", err);
+    return res.status(500).json({ status: "bad", content: err.message });
+  }
+}
 
 /*
   deleting user task
@@ -172,5 +191,6 @@ export default {
   updateTask,
   deleteTask,
   changeStatus,
-  getTaskByTeam
+  getTaskByTeam,
+  completeTask
 };

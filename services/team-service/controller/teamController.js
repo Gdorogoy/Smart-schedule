@@ -219,11 +219,35 @@ const getAllTeams=async(req,res)=>{
         res.status(500).json({status:"bad", content: err.message});
     }
 }
+
+const addToTask=async(req,res)=>{
+
+    try{
+        const {taskId}=req.params;
+        const {membersList}=req.body;
+
+        const payload={
+            taskId,
+            membersList
+        }
+
+        producer.sendEvent("add.to.task",payload);
+        res.status(200).json({status:"good",content:"added memebers"});
+
+    }catch(err){
+        console.error(err);
+        res.status(500).json({status:"bad", content: err.message});
+    }
+
+
+
+}
 export default{
     createTeam,
     deleteFromTeam,
     getTeam,
     assignTasksToTeam,
     updateTeam,
-    getAllTeams
+    getAllTeams,
+    addToTask
 }
